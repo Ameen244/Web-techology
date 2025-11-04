@@ -47,3 +47,30 @@ const login =(req, res) => {
 module.exports = {
     login,
 };
+
+
+
+
+//---VERIFY TOKEN MIDDLEWARE---
+const verifyToken = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(403).send('Access denied: Token missing or malformed');
+    }
+   
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(403).send('Invalid or expired token');
+        }
+
+        req.user = { id: decoded.id, role: decoded.role };
+        next();
+    });
+};
+
+module.exports = {
+    login,
+    verifyToken
+};
