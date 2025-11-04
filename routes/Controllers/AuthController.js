@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
         return jwt.sign({ id, role }, process.env.JWT_SECRET, {
             expiresIn: process.env.JWT_EXPIRES_IN});
 }
+
 const login =(req, res) => {
     const email = req.body.email;
     const password = req.body.password;
@@ -44,11 +45,65 @@ const login =(req, res) => {
     });
 })};
 
-module.exports = {
-    login,
+// -------- SIGNUP (with bcrypt.hash) --------
+const signup = (req, res) => {
+  const { name, email, password, role } = req.body || {};
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: 'name, email, and password are required' });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ message: 'Password must be at least 8 characters' });
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase();
+
+  db.get('SELECT ID FROM users WHERE EMAIL = ?', [normalizedEmail], (err, existing) => {
+    if (err) {
+      console.error('DB error (check existing):', err);
+      return res.status(500).json({ message: 'Database error' });
+    }
+    if (existing) {
+      return res.status(409).json({ message: 'Email already registered' });
+    }
+
+    bcrypt.hash(password, 12, (hashErr, hashed) => {
+      if (hashErr) {
+        console.error('Hash error:', hashErr);
+        return res.status(500).json({ message: 'Error hashing password' });
+      }
+
+      const userRole = role || 'user';
+      const sql = 'INSERT INTO users (NAME, EMAIL, PASSWORD, ROLE) VALUES (?, ?, ?, ?)';
+      const params = [name.trim(), normalizedEmail, hashed, userRole];
+
+      db.run(sql, params, function (insertErr) {
+        if (insertErr) {
+          console.error('DB error (insert):', insertErr);
+          if (String(insertErr.message || '').toLowerCase().includes('unique')) {
+            return res.status(409).json({ message: 'Email already registered' });
+          }
+          return res.status(500).json({ message: 'Database error' });
+        }
+
+        const newUserId = this.lastID;
+        const token = signToken(newUserId, userRole);
+
+        return res.status(201).json({
+          message: 'Signup successful',
+          user: { id: newUserId, name: name.trim(), email: normalizedEmail, role: userRole },
+          token,
+        });
+      });
+    });
+  });
 };
 
-
+module.exports = {
+    login,
+    verifyToken,
+    signup,
+    verifyToken
+};
 
 
 //---VERIFY TOKEN MIDDLEWARE---
@@ -72,5 +127,7 @@ const verifyToken = (req, res, next) => {
 
 module.exports = {
     login,
+    verifyToken,
+    signup,
     verifyToken
 };
