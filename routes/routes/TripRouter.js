@@ -4,19 +4,18 @@ const{
     //retrieveAll,
     getAllTrips,
     //updateTripById,
-    //deleteTRipById,
+    //deleteTripById,
 } = require('../Controllers/TripController');
-const router = express.Router();
+const tripRouter = express.Router();
 
-router
-.route('/') //api/v1/trips
-.post(createTrip)
-.get(getAllTrips);
+tripRouter.route('/') //api/v1/trips
+.post(createTrip) //add new trip
+.get(getAllTrips); //get all trips
 
-/*tripRouter
+tripRouter
 .route('/:id') //api/v1/trips/:id
-.get(retrieveTripById)
-.put(updateTripById)
-.delete(deleteTRipById);*/
+.get(retrieveTripById) //get single trip by id
+.put(updateTripById)   //update trip by id
+.delete(deleteTripById); //delete trip by id
 
-module.exports = router;
+module.exports = tripRouter;

@@ -45,7 +45,7 @@ const login =(req, res) => {
     });
 })};
 
-// -------- SIGNUP (with bcrypt.hash) --------
+// SIGNUP with bcrypt.hash
 const signup = (req, res) => {
   const { name, email, password, role } = req.body || {};
   if (!name || !email || !password) {
